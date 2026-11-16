@@ -118,8 +118,9 @@ button { font: inherit; color: inherit; }
 }
 
 /* header */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
-.brand { display: flex; align-items: center; gap: 10px; margin: 0; font-weight: 900; }
+.top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 14px; }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0; font-weight: 900; flex: none; }
+.brand .zh { white-space: nowrap; }
 .brand .zh { font-size: clamp(24px, calc(var(--cs) * .56), 32px); letter-spacing: .06em; line-height: 1; }
 .brand .en { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 13px; color: var(--ink-soft); letter-spacing: .02em; }
 .brand-mark { position: relative; width: 26px; height: 26px; --ms: 30px; }
@@ -139,10 +140,11 @@ button { font: inherit; color: inherit; }
 }
 .icon-btn:hover { background: var(--btn-hover); color: var(--ink); }
 .icon-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.icon-btn .alt { display: none; }
-.icon-btn[aria-pressed="false"] .main { display: none; }
-.icon-btn[aria-pressed="false"] .alt { display: block; }
 @media (max-width: 400px) { .icon-btn { width: 34px; } .pill { padding: 0 13px; margin-right: 2px; } }
+@media (max-width: 380px) {
+  .icon-btn { width: 31px; } .pill { padding: 0 12px; margin-right: 0; }
+  .brand { gap: 7px; } .brand-mark { width: 22px; height: 22px; } .brand .zh { font-size: 22px; }
+}
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* scoreboard */
@@ -372,11 +374,42 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
 .err { color: var(--bad); font-size: 13px; min-height: 1.5em; margin: 6px 0 0; }
 .credits h3 { font-size: 13px; font-weight: 400; color: var(--ink-soft); margin: 12px 0 2px; }
 
+/* friend challenge */
+.vs { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; padding: 5px 5px 5px 14px; border-radius: 999px; background: var(--btn-hover); font-size: 13px; }
+.vs[hidden] { display: none; }
+.vs-l { color: var(--accent); font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+.vs b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.vs-btn { border: 0; background: transparent; color: var(--ink-soft); font-size: 13px; cursor: pointer; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+.vs-btn:hover { background: var(--line); color: var(--ink); }
+.sec { margin: 20px 0 6px; font-size: 15px; font-weight: 700; }
+.sec:first-of-type { margin-top: 14px; }
+.hint { color: var(--ink-soft); font-size: 14px; }
+.inrow { display: flex; gap: 8px; align-items: center; }
+.inrow .field { margin-top: 0; flex: 1; min-width: 0; }
+.codebox {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: clamp(20px, 6.2vw, 26px); font-weight: 700;
+  letter-spacing: .1em; text-align: center; padding: 14px 8px; margin: 6px 0 14px; border-radius: 12px;
+  background: var(--btn-hover); user-select: all; -webkit-user-select: all;
+}
+.lab { display: block; font-size: 13px; color: var(--ink-soft); }
+.row2 { display: flex; gap: 8px; margin: 12px 0 8px; flex-wrap: wrap; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sheet .content .warn { color: var(--bad); font-size: 14px; }
+.sheet .content .invline { margin: 0; font-size: 16px; }
+.sheet .content .invscore { margin: 0 0 8px; font-size: 56px; font-weight: 650; line-height: 1.1; }
+.setrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
+.setrow + .setrow { border-top: 1px solid var(--line); }
+.setrow small { display: block; color: var(--ink-soft); font-size: 13px; }
+.switch { position: relative; flex: none; width: 46px; height: 28px; border: 0; border-radius: 999px; background: var(--rail); cursor: pointer; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); transition: transform .2s; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+
 @media (prefers-reduced-motion: reduce) {
   .m.sel i, .m.sel::before { animation: none; }
   .m.sel i { box-shadow: 0 0 0 3px var(--accent-2); }
   .m.grow i, .m.grow::before, .m.land i, .m.pop i, .m.pop::before, dialog.sheet[open], .overlay { animation-duration: .01s; }
-  .rail .fill, .runner, .crown, .cell::before { transition: none; }
+  .rail .fill, .runner, .crown, .cell::before, .switch, .switch::after { transition: none; }
 }
 </style>
 </head>
@@ -393,9 +426,8 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     </h1>
     <div class="tools">
       <button class="pill" id="btnNew" title="新局（F4）">新局</button>
-      <button class="icon-btn" id="btnNext" aria-pressed="true" aria-label="顯示下一組" title="顯示下一組（F3）">
-        <svg class="main" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
-        <svg class="alt" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>
+      <button class="icon-btn" id="btnChallenge" aria-label="朋友挑戰" title="朋友挑戰">
+        <svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4.5h12.5l-2.7 4 2.7 4H5"/></svg>
       </button>
       <button class="icon-btn" id="btnStats" aria-label="統計" title="統計（F5）">
         <svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
@@ -403,15 +435,19 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
       <button class="icon-btn" id="btnScores" aria-label="排行榜" title="排行榜">
         <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8.5 20h7"/></svg>
       </button>
-      <button class="icon-btn" id="btnSound" aria-pressed="true" aria-label="音效" title="音效">
-        <svg class="main" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
-        <svg class="alt" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
+      <button class="icon-btn" id="btnSettings" aria-label="設定" title="設定">
+        <svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
       </button>
       <button class="icon-btn" id="btnRules" aria-label="規則" title="規則（F1）">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.4v.4"/><path d="M12 16.9v.1"/></svg>
       </button>
     </div>
   </header>
+
+  <div class="vs" id="vs" hidden>
+    <span class="vs-l">朋友挑戰</span><b id="vsName"></b>
+    <button class="vs-btn" id="vsRetry" type="button">重開這一關</button>
+  </div>
 
   <section class="scoreboard" aria-label="分數">
     <div class="tally you">
@@ -441,11 +477,13 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     <div class="fx" id="fx"></div>
     <div class="overlay" id="over" hidden>
       <div class="card">
-        <h2 class="serif">棋盤滿了</h2>
+        <h2 class="serif" id="overTitle">棋盤滿了</h2>
         <div class="final num" id="finalScore">0</div>
         <p id="overText"></p>
         <div class="row">
           <button class="pill" id="againBtn">再玩一局</button>
+          <button class="ghost" id="overShare">邀請朋友挑戰</button>
+          <button class="ghost" id="overRetry" hidden>重玩這一關</button>
           <button class="ghost" id="overScores">排行榜</button>
         </div>
       </div>
@@ -468,6 +506,7 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
       <li>這一步沒消掉任何線，就會冒出三顆新球，也就是上方的下一組。有消掉就不冒。</li>
       <li>新冒出的球剛好連成線，也會消掉並計分。</li>
       <li>棋盤塞滿，遊戲結束。</li>
+      <li>朋友挑戰：打完一局後，把挑戰碼傳給朋友。你們會有一樣的開局和球的出現順序，比誰的分數高。</li>
     </ul>
     <div class="points">
       <div><span class="n">5 顆</span><span class="v num">10</span></div>
@@ -524,6 +563,58 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
   <footer class="end"><button class="pill" data-close autofocus>關閉</button></footer>
 </dialog>
 
+<dialog class="sheet" id="dlgSettings" aria-labelledby="tSettings">
+  <header><h2 class="serif" id="tSettings">設定</h2>
+    <button class="icon-btn" data-close aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+  <div class="content">
+    <div class="setrow"><span>顯示下一組<small>預覽接著會冒出的三顆球（F3）</small></span><button class="switch" id="swNext" type="button" role="switch" aria-checked="true" aria-label="顯示下一組"></button></div>
+    <div class="setrow"><span>音效<small>拿起、落下、消除的聲音</small></span><button class="switch" id="swSound" type="button" role="switch" aria-checked="true" aria-label="音效"></button></div>
+  </div>
+  <footer class="end"><button class="pill" data-close autofocus>完成</button></footer>
+</dialog>
+
+<dialog class="sheet" id="dlgChallenge" aria-labelledby="tChallenge">
+  <header><h2 class="serif" id="tChallenge">朋友挑戰</h2>
+    <button class="icon-btn" data-close aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+  <div class="content">
+    <p class="hint">同一個挑戰碼，開局和每一輪新球的顏色順序都一樣，只有走法不同，比誰的分數高。</p>
+
+    <h3 class="sec">接受挑戰</h3>
+    <label class="sr" for="codeInput">挑戰碼</label>
+    <div class="inrow">
+      <input class="field" id="codeInput" placeholder="貼上挑戰碼或整段邀請" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <button class="pill" id="codeGo" type="button">開始</button>
+    </div>
+    <p class="err" id="codeErr" role="alert"></p>
+
+    <h3 class="sec">發出挑戰</h3>
+    <p class="hint" id="mineEmpty">打完一局後，這裡會出現你的挑戰碼，傳給朋友就能比分數。</p>
+    <div id="mineBody" hidden>
+      <p class="hint" id="mineLine"></p>
+      <div class="codebox" id="myCode" aria-label="你的挑戰碼"></div>
+      <label class="lab" for="nameShare">你的名字（用連結開啟時，朋友會看到）</label>
+      <input class="field" id="nameShare" maxlength="16" autocomplete="nickname">
+      <div class="row2">
+        <button class="pill" id="btnCopy" type="button">複製邀請</button>
+        <button class="ghost" id="btnShare" type="button" hidden>分享…</button>
+      </div>
+      <p class="hint" id="copyNote" role="status"></p>
+    </div>
+  </div>
+  <footer class="end"><button class="pill" data-close>關閉</button></footer>
+</dialog>
+
+<dialog class="sheet" id="dlgInvite" aria-labelledby="tInvite">
+  <header><h2 class="serif" id="tInvite">收到挑戰</h2></header>
+  <div class="content">
+    <p class="invline"><b id="invName">朋友</b> 在這個挑戰裡拿了</p>
+    <p class="invscore num" id="invScore">0</p>
+    <p class="hint">接受後，你會從跟對方一模一樣的開局出發，要拿到更高的分數才算贏。</p>
+    <p class="warn" id="invWarn" hidden>你現在這局還沒打完，接受後會被取代。</p>
+  </div>
+  <footer><button class="ghost" id="invNo" type="button">先不要</button><button class="pill" id="invYes" type="button">接受挑戰</button></footer>
+</dialog>
+
 <script>
 (() => {
   'use strict';
@@ -534,22 +625,71 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
   const DEFAULT_KING = { name: 'Pretender', score: 100 };
   const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const CROWN = '<svg aria-hidden="true"><use href="#i-crown"/></svg>';
+  const MAX_SCORE = 0xFFFFF;
+  const ALPHA = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const RULES_V = 1;
 
   const $ = (id) => document.getElementById(id);
   const sleep = (ms) => new Promise((r) => setTimeout(r, RM ? Math.min(ms, 20) : ms));
-  const rnd = (n) => Math.floor(Math.random() * n);
   const marble = (c, cls = '') => `<span class="m b${c}${cls ? ' ' + cls : ''}"><i></i></span>`;
 
   /* ---------- storage ---------- */
   function load(k, d) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch (e) { return d; } }
   function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* unavailable */ } }
 
-  let prefs = Object.assign({ showNext: true, sound: true, lastName: '' }, load(KEY.prefs, {}));
+  let prefs = Object.assign({ showNext: true, sound: true, lastName: '', last: null }, load(KEY.prefs, {}));
   let scores = load(KEY.scores, []);
   if (!Array.isArray(scores)) scores = [];
   scores = scores.filter((s) => s && typeof s.name === 'string' && Number.isFinite(s.score)).slice(0, 10);
+  if (!(prefs.last && Number.isFinite(prefs.last.seed) && Number.isFinite(prefs.last.score))) prefs.last = null;
+  prefs.lastName = cleanName(prefs.lastName);
 
   let S = null, sel = -1, busy = false, focusIdx = 40, shown = 0, tweenId = 0;
+
+  /* ---------- seeded random: same seed = same opening and same colour order ---------- */
+  function randSeed() {
+    try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296) >>> 0; }
+  }
+  function mixSeed(seed, salt) { return Math.imul(seed ^ salt, 0x9E3779B1) >>> 0; }
+  function initRng(seed) { return { c: mixSeed(seed, 0x2545F491), p: mixSeed(seed, 0x6C8E9CF5) }; }
+  function rand(stream) {
+    const a = (S.rs[stream] + 0x6D2B79F5) | 0;
+    S.rs[stream] = a;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const rndC = (n) => Math.floor(rand('c') * n);   // colours
+  const rndP = (n) => Math.floor(rand('p') * n);   // positions
+
+  /* ---------- challenge code: 32-bit seed + 20-bit score + 8-bit check = 12 chars ---------- */
+  function checksum(seed, score) {
+    const bytes = [(seed >>> 24) & 255, (seed >>> 16) & 255, (seed >>> 8) & 255, seed & 255, (score >>> 16) & 255, (score >>> 8) & 255, score & 255];
+    let h = (0x811C9DC5 ^ RULES_V) | 0;
+    for (const b of bytes) { h ^= b; h = Math.imul(h, 16777619); }
+    return ((h >>> 24) ^ (h >>> 16) ^ (h >>> 8) ^ h) & 255;
+  }
+  function encodeChallenge(seed, score) {
+    seed = seed >>> 0;
+    score = Math.max(0, Math.min(MAX_SCORE, Math.floor(score)));
+    const v = (BigInt(seed) << 28n) | (BigInt(score) << 8n) | BigInt(checksum(seed, score));
+    let out = '';
+    for (let i = 11; i >= 0; i--) out += ALPHA[Number((v >> BigInt(i * 5)) & 31n)];
+    return out.replace(/(.{4})(?=.)/g, '$1-');
+  }
+  function decodeChallenge(str) {
+    const s = String(str).toUpperCase().replace(/[\s-]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+    if (s.length !== 12) return null;
+    let v = 0n;
+    for (const ch of s) {
+      const k = ALPHA.indexOf(ch);
+      if (k < 0) return null;
+      v = (v << 5n) | BigInt(k);
+    }
+    const chk = Number(v & 255n), score = Number((v >> 8n) & 0xFFFFFn), seed = Number(v >> 28n);
+    return checksum(seed, score) === chk ? { seed, score } : null;
+  }
+  function cleanName(s) { return String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16); }
 
   const freshStats = () => ({ removed: Array(COLORS).fill(0), lines: 0, moves: 0, best: 0 });
   const currentKing = () => scores.length ? { name: scores[0].name, score: Math.max(1, scores[0].score) } : { ...DEFAULT_KING };
@@ -645,9 +785,10 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     rail.style.setProperty('--p', p.toFixed(4));
     const beaten = S.score > S.king.score;
     rail.classList.toggle('beaten', beaten);
+    const who = S.challenge ? S.king.name : `王者 ${S.king.name}`;
     $('gap').textContent = beaten
-      ? `你已超越王者 ${S.king.name}，領先 ${S.score - S.king.score} 分`
-      : `再 ${S.king.score - S.score + 1} 分，就能超越王者 ${S.king.name}`;
+      ? `你已超越${who}，領先 ${S.score - S.king.score} 分`
+      : `再 ${S.king.score - S.score + 1} 分，就能超越${who}`;
   }
   const renderTime = () => { $('time').textContent = fmtTime(S.elapsed); };
   const msg = (t) => { $('msg').textContent = t; };
@@ -688,7 +829,7 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
 
   /* ---------- logic ---------- */
   function empties() { const e = []; for (let i = 0; i < CELLS; i++) if (S.board[i] < 0) e.push(i); return e; }
-  const randNext = () => [rnd(COLORS), rnd(COLORS), rnd(COLORS)];
+  const randNext = () => [rndC(COLORS), rndC(COLORS), rndC(COLORS)];
   function neighbours(i) {
     const r = Math.floor(i / N), c = i % N, nb = [];
     if (r > 0) nb.push(i - N);
@@ -771,7 +912,7 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     S.score += pts;
     renderScores();
     if (wasBelow && S.score > S.king.score) {
-      msg(`消掉 ${n} 顆，+${pts} 分。你超越王者了！`);
+      msg(`消掉 ${n} 顆，+${pts} 分。你超越${S.challenge ? S.king.name : '王者'}了！`);
       setTimeout(() => sfx.win(), 280);
     } else {
       msg(`消掉 ${n} 顆，+${pts} 分`);
@@ -783,7 +924,7 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     for (const c of S.next) {
       const e = empties();
       if (!e.length) break;
-      const i = e[rnd(e.length)];
+      const i = e[rndP(e.length)];
       S.board[i] = c;
       renderCell(i, 'grow');
       placed.push(i);
@@ -857,20 +998,26 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     doMove(path);
   }
 
-  async function newGame() {
+  async function newGame(ch) {
+    await idle();
     busy = true; sel = -1;
+    const seed = ch ? ch.seed >>> 0 : randSeed();
     S = {
-      board: Array(CELLS).fill(-1), next: randNext(), score: 0, stats: freshStats(),
-      elapsed: 0, started: false, over: false, king: currentKing(),
+      board: Array(CELLS).fill(-1), next: null, score: 0, stats: freshStats(),
+      elapsed: 0, started: false, over: false,
+      seed, rs: initRng(seed),
+      challenge: ch ? { seed, score: ch.score, name: ch.name } : null,
+      king: ch ? { name: ch.name, score: ch.score } : currentKing(),
     };
+    S.next = randNext();
     $('over').hidden = true;
     markReach();
-    renderBoard(); renderNext(); renderScores(true); renderTime();
-    msg('點一顆球拿起來，再點要去的空格');
+    renderBoard(); renderNext(); renderScores(true); renderTime(); renderVs();
+    msg(ch ? `挑戰 ${ch.name}：要拿到超過 ${ch.score} 分` : '點一顆球拿起來，再點要去的空格');
     const e = empties();
     for (let k = 0; k < 5; k++) {
-      const j = e.splice(rnd(e.length), 1)[0];
-      S.board[j] = rnd(COLORS);
+      const j = e.splice(rndP(e.length), 1)[0];
+      S.board[j] = rndC(COLORS);
       renderCell(j, 'grow');
       await sleep(80);
     }
@@ -884,13 +1031,26 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
     S.over = true; busy = true;
     save();
     sfx.over();
+    const ch = S.challenge, d = ch ? S.score - ch.score : 0;
     $('finalScore').textContent = S.score;
-    $('overText').textContent = S.score > S.king.score ? `新王者誕生，用時 ${fmtTime(S.elapsed)}` : `用時 ${fmtTime(S.elapsed)}`;
+    if (ch) {
+      $('overTitle').textContent = d > 0 ? `你贏了 ${ch.name}` : d < 0 ? `輸給 ${ch.name}` : '平手';
+      $('overText').textContent = d > 0 ? `${S.score} 比 ${ch.score}，贏 ${d} 分` : d < 0 ? `${S.score} 比 ${ch.score}，差 ${-d} 分` : `雙方都是 ${S.score} 分`;
+    } else {
+      $('overTitle').textContent = '棋盤滿了';
+      $('overText').textContent = S.score > S.king.score ? `新王者誕生，用時 ${fmtTime(S.elapsed)}` : `用時 ${fmtTime(S.elapsed)}`;
+    }
+    $('overShare').textContent = ch ? '把成績傳給朋友' : '邀請朋友挑戰';
+    $('overRetry').hidden = !ch;
+    if (S.score > 0 && !S.noShare) {
+      prefs.last = { seed: S.seed, score: Math.min(S.score, MAX_SCORE), vs: ch ? { name: ch.name, score: ch.score } : null };
+      store(KEY.prefs, prefs);
+    }
     $('over').hidden = false;
     msg('按「再玩一局」或 F4 重新開始');
     if (qualifies(S.score)) {
       setTimeout(() => {
-        $('nameLead').textContent = S.score > S.king.score
+        $('nameLead').textContent = !S.challenge && S.score > S.king.score
           ? `${S.score} 分，你是新的王者。`
           : `${S.score} 分，進了前十名。`;
         $('nameInput').value = prefs.lastName || '';
@@ -953,15 +1113,122 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
   });
   $('toAbout').addEventListener('click', () => { $('dlgRules').close(); $('dlgAbout').showModal(); });
 
+  function applyPrefsUI() {
+    $('swNext').setAttribute('aria-checked', String(prefs.showNext));
+    $('swSound').setAttribute('aria-checked', String(prefs.sound));
+  }
   function toggleNext() {
     prefs.showNext = !prefs.showNext; store(KEY.prefs, prefs);
-    $('btnNext').setAttribute('aria-pressed', String(prefs.showNext));
-    renderNext();
+    applyPrefsUI(); renderNext();
   }
   function toggleSound() {
     prefs.sound = !prefs.sound; store(KEY.prefs, prefs);
-    $('btnSound').setAttribute('aria-pressed', String(prefs.sound));
+    applyPrefsUI();
   }
+
+/* ---------- friend challenge ---------- */
+  async function idle() {
+    for (let k = 0; k < 80 && S && busy && !S.over; k++) await sleep(50);
+  }
+  function renderVs() {
+    const ch = S.challenge;
+    $('vs').hidden = !ch;
+    if (ch) $('vsName').textContent = ch.name;
+  }
+
+  // accepts a bare code, a whole invite message, or a link with #c=...&n=...
+  function parseChallengeInput(text) {
+    text = String(text || '');
+    let name = '';
+    const nm = text.match(/[#&?]n=([^&\s#]+)/);
+    if (nm) { try { name = decodeURIComponent(nm[1]); } catch (e) { name = ''; } }
+    let raw;
+    const cm = text.match(/[#&?]c=([0-9A-Za-z-]+)/);
+    if (cm) raw = cm[1];
+    else {
+      const m2 = text.match(/\b[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}\b/);
+      raw = m2 ? m2[0] : text;
+    }
+    const d = decodeChallenge(raw);
+    return d ? { seed: d.seed, score: d.score, name: cleanName(name) || '朋友' } : null;
+  }
+
+  let pendingInvite = null;
+  function confirmInvite(r) {
+    pendingInvite = r;
+    $('invName').textContent = r.name;
+    $('invScore').textContent = r.score;
+    $('invWarn').hidden = !(S && S.started && !S.over);
+    $('dlgInvite').showModal();
+  }
+
+  function shareParts() {
+    const L = prefs.last;
+    const code = encodeChallenge(L.seed, L.score);
+    let intro;
+    if (!L.vs) intro = `我在「色球」拿了 ${L.score} 分，敢來挑戰嗎？`;
+    else if (L.score > L.vs.score) intro = `我接下了你的「色球」挑戰，拿了 ${L.score} 分，贏過你的 ${L.vs.score} 分。換你反擊？`;
+    else if (L.score < L.vs.score) intro = `我接下了你的「色球」挑戰，拿了 ${L.score} 分，輸你 ${L.vs.score - L.score} 分。再比一次？`;
+    else intro = `我接下了你的「色球」挑戰，我們都是 ${L.score} 分。再比一次？`;
+    const name = cleanName(prefs.lastName);
+    const link = /^https?:$/.test(location.protocol)
+      ? `${location.href.split('#')[0]}#c=${code}${name ? '&n=' + encodeURIComponent(name) : ''}` : '';
+    const body = `${intro}\n挑戰碼：${code}`;
+    return { code, link, intro: body, text: link ? `${body}\n${link}` : body };
+  }
+
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back */ }
+    const host = document.querySelector('dialog[open]') || document.body;
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    host.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+
+  function updateShare() {
+    const L = prefs.last;
+    if (!L) return;
+    $('myCode').textContent = encodeChallenge(L.seed, L.score);
+    $('mineLine').textContent = L.vs ? `上一局對 ${L.vs.name}：${L.score} 分` : `上一局：${L.score} 分`;
+  }
+
+  function openChallenge(toMine) {
+    $('codeErr').textContent = '';
+    $('copyNote').textContent = '';
+    const L = prefs.last;
+    $('mineEmpty').hidden = !!L;
+    $('mineBody').hidden = !L;
+    if (L) { $('nameShare').value = prefs.lastName || ''; updateShare(); }
+    $('btnShare').hidden = !navigator.share;
+    $('dlgChallenge').showModal();
+    if (toMine && L) $('mineBody').scrollIntoView({ block: 'nearest' });
+  }
+
+  function submitCode() {
+    const r = parseChallengeInput($('codeInput').value);
+    if (!r) { $('codeErr').textContent = '這串挑戰碼看起來不對。請確認有沒有複製完整，或直接貼上朋友傳的整段邀請。'; return; }
+    $('codeErr').textContent = '';
+    $('codeInput').value = '';
+    $('dlgChallenge').close();
+    confirmInvite(r);
+  }
+
+  function checkHash() {
+    const h = location.hash;
+    if (!/[#&]c=/.test(h)) return;
+    const r = parseChallengeInput(h);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* sandboxed */ }
+    if (r) confirmInvite(r);
+    else { openChallenge(); $('codeErr').textContent = '連結裡的挑戰碼不正確，請朋友重新傳一次。'; }
+  }
+
+  let retryTimer = 0;
+  function resetRetry() { clearTimeout(retryTimer); retryTimer = 0; $('vsRetry').textContent = '重開這一關'; }
 
   /* ---------- input ---------- */
   boardEl.addEventListener('click', (ev) => { const c = ev.target.closest('.cell'); if (c) onCell(+c.dataset.i); });
@@ -982,13 +1249,58 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
   });
 
   $('btnNew').addEventListener('click', () => newGame());
-  $('btnNext').addEventListener('click', toggleNext);
+  $('btnChallenge').addEventListener('click', () => openChallenge(false));
   $('btnStats').addEventListener('click', showStats);
   $('btnScores').addEventListener('click', () => showScores());
-  $('btnSound').addEventListener('click', toggleSound);
+  $('btnSettings').addEventListener('click', () => $('dlgSettings').showModal());
   $('btnRules').addEventListener('click', () => $('dlgRules').showModal());
+  $('swNext').addEventListener('click', toggleNext);
+  $('swSound').addEventListener('click', toggleSound);
   $('againBtn').addEventListener('click', () => newGame());
   $('overScores').addEventListener('click', () => showScores());
+  $('overShare').addEventListener('click', () => openChallenge(true));
+  $('overRetry').addEventListener('click', () => { if (S.challenge) newGame(S.challenge); });
+
+  $('vsRetry').addEventListener('click', () => {
+    if (!S.challenge) return;
+    if (S.started && !S.over && !retryTimer) {
+      $('vsRetry').textContent = '再按一次確定';
+      retryTimer = setTimeout(resetRetry, 2800);
+      return;
+    }
+    resetRetry();
+    newGame(S.challenge);
+  });
+
+  $('codeGo').addEventListener('click', submitCode);
+  $('codeInput').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); submitCode(); } });
+  $('invNo').addEventListener('click', () => { pendingInvite = null; $('dlgInvite').close(); });
+  $('invYes').addEventListener('click', () => {
+    const r = pendingInvite; pendingInvite = null;
+    $('dlgInvite').close();
+    if (r) newGame(r);
+  });
+  $('nameShare').addEventListener('input', () => {
+    prefs.lastName = cleanName($('nameShare').value);
+    store(KEY.prefs, prefs);
+  });
+  $('btnCopy').addEventListener('click', async () => {
+    if (!prefs.last) return;
+    const ok = await copyText(shareParts().text);
+    $('copyNote').textContent = ok ? '已複製，直接貼給朋友就可以了。' : '無法自動複製，請長按上方的挑戰碼手動複製。';
+    if (ok) {
+      $('btnCopy').textContent = '已複製';
+      setTimeout(() => { $('btnCopy').textContent = '複製邀請'; }, 1600);
+    }
+  });
+  $('btnShare').addEventListener('click', async () => {
+    if (!prefs.last) return;
+    const p = shareParts();
+    const data = { title: '色球挑戰', text: p.intro };
+    if (p.link) data.url = p.link;
+    try { await navigator.share(data); } catch (e) { /* cancelled */ }
+  });
+  window.addEventListener('hashchange', checkHash);
 
   document.addEventListener('keydown', (ev) => {
     const act = { F1: () => $('dlgRules').showModal(), F3: toggleNext, F4: newGame, F5: showStats }[ev.key];
@@ -1009,18 +1321,22 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
   window.addEventListener('pagehide', save);
 
   /* ---------- start ---------- */
-  $('btnNext').setAttribute('aria-pressed', String(prefs.showNext));
-  $('btnSound').setAttribute('aria-pressed', String(prefs.sound));
+  applyPrefsUI();
 
   const saved = load(KEY.game, null);
   if (validGame(saved) && !saved.over && saved.board.some((v) => v < 0)) {
     S = saved;
     S.stats = Object.assign(freshStats(), S.stats);
-    renderBoard(); renderNext(); renderScores(true); renderTime();
-    msg('接著上次的局面繼續');
+    if (!S.rs || !Number.isFinite(S.rs.c) || !Number.isFinite(S.rs.p) || !Number.isFinite(S.seed)) {
+      S.seed = randSeed(); S.rs = initRng(S.seed); S.noShare = true;   // older save: opening can't be reproduced
+    }
+    if (S.challenge && !(Number.isFinite(S.challenge.score) && typeof S.challenge.name === 'string')) S.challenge = null;
+    renderBoard(); renderNext(); renderScores(true); renderTime(); renderVs();
+    msg(S.challenge ? `接著上次的挑戰繼續：${S.challenge.name} ${S.challenge.score} 分` : '接著上次的局面繼續');
   } else {
     newGame();
   }
+  checkHash();
 })();
 </script>
 </body>
