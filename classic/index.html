@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>色球 Color Linez</title>
+<style>
+:root {
+  --desk: #2a7772;
+  --panel: #c9c6bd;
+  --panel-hi: #f7f5ef;
+  --panel-lo: #7a766e;
+  --ink: #1e1d1a;
+  --ink-soft: #55524b;
+  --cell: #a8a49b;
+  --cell-hi: #dad7ce;
+  --cell-lo: #625f58;
+  --track: #8e8a82;
+  --title-a: #0a2a78;
+  --title-b: #3279c2;
+  --title-ink: #ffffff;
+  --menu-hi: #0a2a78;
+  --menu-hi-ink: #ffffff;
+  --field: #ffffff;
+  --led-bg: #000000;
+  --led-on: #ff3a20;
+  --led-off: #3a0904;
+  --focus: #ffd200;
+  --pawn: #f3efe4;
+  --pawn-edge: #3a372f;
+  --king: #e0aa1e;
+  --king-edge: #5e4100;
+  --bad: #b3261e;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #0d2826;
+    --panel: #3d3c38;
+    --panel-hi: #67655f;
+    --panel-lo: #1c1b19;
+    --ink: #ece9e1;
+    --ink-soft: #b4b0a6;
+    --cell: #5a5751;
+    --cell-hi: #7a776f;
+    --cell-lo: #2a2926;
+    --track: #2e2d2a;
+    --title-a: #08205c;
+    --title-b: #285f9a;
+    --menu-hi: #2f6db0;
+    --field: #262523;
+    --pawn-edge: #1b1a17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #0d2826;
+  --panel: #3d3c38;
+  --panel-hi: #67655f;
+  --panel-lo: #1c1b19;
+  --ink: #ece9e1;
+  --ink-soft: #b4b0a6;
+  --cell: #5a5751;
+  --cell-hi: #7a776f;
+  --cell-lo: #2a2926;
+  --track: #2e2d2a;
+  --title-a: #08205c;
+  --title-b: #285f9a;
+  --menu-hi: #2f6db0;
+  --field: #262523;
+  --pawn-edge: #1b1a17;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: "Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Heiti TC", system-ui, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px 8px 24px;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+
+/* bevels */
+.raised { border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi); }
+.sunken { border: 2px solid; border-color: var(--panel-lo) var(--panel-hi) var(--panel-hi) var(--panel-lo); }
+
+/* sizing */
+.window {
+  --cs: clamp(28px, min(calc((100vw - 112px) / 9), calc((100vh - 270px) / 9)), 56px);
+  --track-w: clamp(22px, calc(var(--cs) * .62), 34px);
+  background: var(--panel);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .38);
+  max-width: 100%;
+}
+.titlebar {
+  display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(90deg, var(--title-a), var(--title-b));
+  color: var(--title-ink);
+  font-weight: 700;
+  padding: 3px 6px;
+  letter-spacing: .04em;
+  user-select: none;
+}
+.titlebar .mini { width: 14px; height: 14px; }
+.titlebar .sub { font-weight: 400; opacity: .8; font-size: 12px; }
+
+/* menubar */
+.menubar { display: flex; gap: 2px; padding: 2px 4px; position: relative; z-index: 20; user-select: none; }
+.menu { position: relative; }
+.mtop { background: none; border: 0; padding: 3px 9px; cursor: default; }
+.mtop[aria-expanded="true"], .mtop:focus-visible { background: var(--menu-hi); color: var(--menu-hi-ink); outline: none; }
+.drop {
+  position: absolute; left: 0; top: 100%;
+  background: var(--panel); min-width: 188px; padding: 2px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,.28);
+}
+.drop[hidden] { display: none; }
+.drop button {
+  display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 4px;
+  width: 100%; text-align: left; background: none; border: 0; padding: 5px 10px 5px 4px; cursor: default;
+}
+.drop button:hover, .drop button:focus-visible { background: var(--menu-hi); color: var(--menu-hi-ink); outline: none; }
+.drop .key { font-size: 12px; opacity: .75; padding-left: 18px; }
+.drop .check { visibility: hidden; text-align: center; }
+.drop [aria-checked="true"] .check { visibility: visible; }
+.drop hr { border: 0; border-top: 1px solid var(--panel-lo); border-bottom: 1px solid var(--panel-hi); margin: 3px 2px; }
+
+/* hud */
+.body { padding: 6px 8px 8px; }
+.hud {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px;
+  margin-bottom: 8px;
+}
+.side { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.side.right { align-items: flex-end; }
+.who { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.led { background: var(--led-bg); padding: 4px 5px; line-height: 0; display: inline-block; }
+.led svg { height: clamp(20px, calc(var(--cs) * .6), 30px); width: auto; display: block; }
+.led .on { fill: var(--led-on); }
+.led .off { fill: var(--led-off); }
+.next { display: flex; gap: 3px; padding: 3px; background: var(--track); }
+.next .slot {
+  width: calc(var(--cs) * .78); height: calc(var(--cs) * .78);
+  display: grid; place-items: center;
+  background: var(--cell);
+  border: 2px solid; border-color: var(--cell-hi) var(--cell-lo) var(--cell-lo) var(--cell-hi);
+  --cell-size: calc(var(--cs) * .78);
+  color: var(--ink-soft); font-weight: 700;
+}
+
+/* arena */
+.arena { display: flex; gap: 6px; align-items: stretch; }
+.track { width: var(--track-w); position: relative; background: var(--track); overflow: hidden; }
+.figure { position: absolute; left: 50%; width: calc(var(--track-w) - 4px); height: auto; }
+.pawn {
+  bottom: calc(4px + var(--p, 0) * (100% - 8px - var(--track-w) * 1.5));
+  transform: translateX(-50%);
+  transition: bottom .7s cubic-bezier(.3, 1.35, .5, 1), filter .4s;
+}
+.pawn.champion { filter: drop-shadow(0 0 5px var(--king)); }
+.king {
+  top: 4px;
+  transform: translateX(-50%);
+  transform-origin: 50% 50%;
+  transition: top .7s cubic-bezier(.55, 0, .9, .5), transform .7s ease-in, opacity .7s;
+}
+.king.toppled { top: calc(100% - var(--track-w) * 1.27 + 3px); transform: translateX(-50%) rotate(-90deg) scale(.6); opacity: .6; }
+.figure path { stroke-width: 1.6; stroke-linejoin: round; }
+.pawn path { fill: var(--pawn); stroke: var(--pawn-edge); }
+.king path { fill: var(--king); stroke: var(--king-edge); }
+
+.board-wrap { position: relative; }
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, var(--cs));
+  grid-auto-rows: var(--cs);
+  background: var(--cell-lo);
+}
+.cell {
+  --cell-size: var(--cs);
+  display: grid; place-items: center;
+  margin: 0; padding: 0;
+  background: var(--cell);
+  border: 2px solid; border-color: var(--cell-hi) var(--cell-lo) var(--cell-lo) var(--cell-hi);
+  cursor: pointer;
+  touch-action: manipulation;
+  position: relative;
+}
+.cell:focus { outline: none; }
+.cell:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.cell.nope { animation: nope .26s; }
+@keyframes nope {
+  0%, 100% { background: var(--cell); }
+  30% { background: var(--bad); transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+}
+
+/* balls */
+.ball {
+  width: 74%; height: 74%; border-radius: 50%; display: block;
+  background: radial-gradient(circle at 34% 30%, rgba(255,255,255,.95) 0 6%, var(--l) 17%, var(--m) 54%, var(--d) 100%);
+  box-shadow: 0 calc(var(--cell-size) * .05) calc(var(--cell-size) * .07) rgba(0, 0, 0, .45);
+  pointer-events: none;
+}
+.b0 { --l: #ffb0a4; --m: #e1281b; --d: #680902; }
+.b1 { --l: #b8f3a0; --m: #2da61d; --d: #0b4806; }
+.b2 { --l: #a9c3ff; --m: #2147d6; --d: #091865; }
+.b3 { --l: #fff6ae; --m: #f0cc10; --d: #775b00; }
+.b4 { --l: #b6faff; --m: #17b5ce; --d: #054e5c; }
+.b5 { --l: #ffb6f3; --m: #c423ae; --d: #54094a; }
+.b6 { --l: #e8c299; --m: #985822; --d: #3c1f07; }
+.ball.sel { animation: hop .5s ease-in-out infinite; }
+@keyframes hop {
+  0%, 100% { transform: translateY(9%) scale(1.07, .9); }
+  50% { transform: translateY(-15%) scale(.96, 1.04); }
+}
+.ball.grow { animation: grow .2s ease-out; }
+@keyframes grow { from { transform: scale(.1); } to { transform: scale(1); } }
+.ball.pop { animation: pop .3s ease-in forwards; }
+@keyframes pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); filter: brightness(1.6); }
+  100% { transform: scale(0); opacity: 0; filter: brightness(2); }
+}
+
+.overlay {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: rgba(0, 0, 0, .45);
+}
+.overlay[hidden] { display: none; }
+.overlay .box { background: var(--panel); padding: 14px 18px; text-align: center; min-width: 60%; }
+.overlay h2 { margin: 0 0 4px; font-size: 20px; }
+.overlay p { margin: 0 0 12px; color: var(--ink-soft); }
+
+/* status bar */
+.status { display: flex; gap: 6px; margin-top: 8px; align-items: stretch; }
+.msg {
+  flex: 1; min-width: 0; padding: 3px 7px; display: flex; align-items: center;
+  font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.status .led svg { height: 18px; }
+
+/* buttons & dialogs */
+.btn {
+  min-width: 84px; padding: 4px 14px; background: var(--panel); cursor: pointer;
+  border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.btn:active { border-color: var(--panel-lo) var(--panel-hi) var(--panel-hi) var(--panel-lo); }
+.btn:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
+dialog.win {
+  padding: 0; background: var(--panel); color: var(--ink);
+  border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+  box-shadow: 4px 4px 0 rgba(0,0,0,.35);
+  width: min(420px, calc(100vw - 24px));
+}
+dialog.win::backdrop { background: rgba(0, 0, 0, .3); }
+dialog .titlebar { justify-content: space-between; }
+dialog .x {
+  width: 20px; height: 18px; padding: 0; line-height: 1; font-weight: 700;
+  background: var(--panel); color: var(--ink);
+  border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+  cursor: pointer;
+}
+.dbody { padding: 12px 14px 4px; line-height: 1.7; }
+.dbody p { margin: 0 0 8px; }
+.dbody ul { margin: 0 0 8px; padding-left: 1.2em; }
+.dfoot { display: flex; justify-content: center; gap: 8px; padding: 6px 14px 14px; }
+.inset { background: var(--field); padding: 6px 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 3px 6px; text-align: left; }
+th { font-weight: 400; color: var(--ink-soft); font-size: 12px; }
+td.num, th.num { text-align: right; }
+tr.mine td { background: var(--menu-hi); color: var(--menu-hi-ink); }
+.swatch { --cell-size: 18px; display: inline-block; width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px; }
+.swatch .ball { width: 100%; height: 100%; }
+.field {
+  width: 100%; padding: 4px 6px; background: var(--field); color: var(--ink);
+  border: 2px solid; border-color: var(--panel-lo) var(--panel-hi) var(--panel-hi) var(--panel-lo);
+  font: inherit;
+}
+.field:focus { outline: 1px dotted var(--ink); }
+.err { color: var(--bad); font-size: 13px; min-height: 1.4em; margin: 4px 0 0; }
+.credits { font-size: 13px; }
+.credits h3 { font-size: 13px; margin: 6px 0 2px; color: var(--ink-soft); font-weight: 400; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ball.sel { animation: none; box-shadow: 0 0 0 3px var(--focus); }
+  .ball.grow, .ball.pop { animation-duration: .01s; }
+  .pawn, .king { transition-duration: .01s; }
+}
+</style>
+</head>
+<body>
+
+<div class="window raised" id="win">
+  <div class="titlebar">
+    <svg class="mini" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="#e1281b"/><circle cx="5" cy="4.6" r="1.6" fill="#fff" opacity=".9"/></svg>
+    <span>色球</span><span class="sub">Color Linez</span>
+  </div>
+
+  <nav class="menubar" role="menubar" aria-label="主選單">
+    <div class="menu">
+      <button class="mtop" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="m-game">遊戲</button>
+      <div class="drop raised" id="m-game" role="menu" hidden>
+        <button role="menuitem" data-act="new"><span class="check"></span><span>新遊戲</span><span class="key">F4</span></button>
+        <button role="menuitem" data-act="scores"><span class="check"></span><span>排行榜</span><span class="key"></span></button>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="mtop" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="m-opt">選項</button>
+      <div class="drop raised" id="m-opt" role="menu" hidden>
+        <button role="menuitemcheckbox" aria-checked="true" data-act="next" id="optNext"><span class="check">✓</span><span>顯示下一組</span><span class="key">F3</span></button>
+        <button role="menuitemcheckbox" aria-checked="true" data-act="sound" id="optSound"><span class="check">✓</span><span>音效</span><span class="key"></span></button>
+        <hr>
+        <button role="menuitem" data-act="stats"><span class="check"></span><span>統計</span><span class="key">F5</span></button>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="mtop" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="m-help">說明</button>
+      <div class="drop raised" id="m-help" role="menu" hidden>
+        <button role="menuitem" data-act="rules"><span class="check"></span><span>規則</span><span class="key">F1</span></button>
+        <button role="menuitem" data-act="about"><span class="check"></span><span>關於…</span><span class="key"></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="body">
+    <div class="hud">
+      <div class="side">
+        <div class="led sunken" id="ledScore" aria-hidden="true"></div>
+        <div class="who" id="youLabel">你的分數</div>
+      </div>
+      <div class="next sunken" id="next" aria-label="下一組"></div>
+      <div class="side right">
+        <div class="led sunken" id="ledKing" aria-hidden="true"></div>
+        <div class="who" id="kingLabel">王者</div>
+      </div>
+    </div>
+
+    <div class="arena">
+      <div class="track sunken" aria-hidden="true">
+        <svg class="figure pawn" id="pawn" viewBox="0 0 40 60">
+          <path d="M20 3a8 8 0 1 1 0 16a8 8 0 1 1 0-16z"/>
+          <path d="M12 20h16l-2 5H14z"/>
+          <path d="M15 25h10c0 9 3 16 9 22H6c6-6 9-13 9-22z"/>
+          <path d="M3 48h34v8H3z"/>
+        </svg>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board sunken" id="board" role="group" aria-label="9 乘 9 棋盤"></div>
+        <div class="overlay" id="over" hidden>
+          <div class="box raised">
+            <h2>遊戲結束</h2>
+            <p id="overText"></p>
+            <button class="btn" id="againBtn">再玩一局</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="track sunken" aria-hidden="true">
+        <svg class="figure king" id="king" viewBox="0 0 40 66">
+          <path d="M17.5 2h5v5h5v5h-5v5h-5v-5h-5V7h5z"/>
+          <path d="M9 19h22l-3 11H12z"/>
+          <path d="M14 31h12c0 9 3 16 9 22H5c6-6 9-13 9-22z"/>
+          <path d="M3 54h34v8H3z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="status">
+      <div class="msg sunken" id="msg" role="status" aria-live="polite">點一顆球，再點要去的空格。</div>
+      <div class="led sunken" id="ledTime" aria-label="遊戲時間"></div>
+    </div>
+  </div>
+</div>
+
+<!-- dialogs -->
+<dialog class="win" id="dlgRules" aria-labelledby="tRules">
+  <div class="titlebar"><span id="tRules">規則</span><button class="x" data-close aria-label="關閉">×</button></div>
+  <div class="dbody">
+    <p>目標是分數贏過右邊的王者。把同色的球排成橫、直或斜的一條線，五顆以上就會消掉並得分。</p>
+    <ul>
+      <li>點一顆球選取它（球會開始跳），再點一個空格，球會沿著空格走過去。路被擋住就走不過去。</li>
+      <li>這一步沒消掉任何線，就會冒出三顆新球，也就是上方顯示的下一組。有消掉就不會冒球。</li>
+      <li>新冒出的球剛好連成線，也會消掉並計分。</li>
+      <li>棋盤塞滿，遊戲結束。</li>
+    </ul>
+    <table class="inset" aria-label="計分">
+      <tr><th>一次消掉</th><th class="num">5 顆</th><th class="num">6 顆</th><th class="num">7 顆</th><th class="num">8 顆</th><th class="num">9 顆</th></tr>
+      <tr><td>得分</td><td class="num">10</td><td class="num">12</td><td class="num">18</td><td class="num">28</td><td class="num">42</td></tr>
+    </table>
+    <p style="margin-top:10px">鍵盤：方向鍵移動、空白鍵或 Enter 選取與移動；F4 新遊戲、F3 顯示下一組、F5 統計、F1 規則。</p>
+  </div>
+  <div class="dfoot"><button class="btn" data-close autofocus>確定</button></div>
+</dialog>
+
+<dialog class="win" id="dlgScores" aria-labelledby="tScores">
+  <div class="titlebar"><span id="tScores">排行榜</span><button class="x" data-close aria-label="關閉">×</button></div>
+  <div class="dbody"><div class="inset sunken"><table id="scoreTable"></table></div></div>
+  <div class="dfoot"><button class="btn" data-close autofocus>確定</button></div>
+</dialog>
+
+<dialog class="win" id="dlgStats" aria-labelledby="tStats">
+  <div class="titlebar"><span id="tStats">統計</span><button class="x" data-close aria-label="關閉">×</button></div>
+  <div class="dbody"><div class="inset sunken"><table id="statsTable"></table></div></div>
+  <div class="dfoot"><button class="btn" data-close autofocus>確定</button></div>
+</dialog>
+
+<dialog class="win" id="dlgName" aria-labelledby="tName">
+  <form id="nameForm" novalidate>
+    <div class="titlebar"><span id="tName">恭喜</span></div>
+    <div class="dbody">
+      <p id="nameLead">你的分數進了前十名。</p>
+      <label for="nameInput">請輸入名字：</label>
+      <input class="field" id="nameInput" maxlength="16" autocomplete="nickname">
+      <p class="err" id="nameErr"></p>
+    </div>
+    <div class="dfoot"><button class="btn" type="submit">確定</button></div>
+  </form>
+</dialog>
+
+<dialog class="win" id="dlgAbout" aria-labelledby="tAbout">
+  <div class="titlebar"><span id="tAbout">關於</span><button class="x" data-close aria-label="關閉">×</button></div>
+  <div class="dbody credits">
+    <p><strong>色球</strong>：Color Linez 的網頁重製版，規則與計分照原版。</p>
+    <h3>原版</h3>
+    <p>Color Lines © GAMOS, 1992（俄羅斯）。程式 Olga Demina，美術 Igor Ivkin 與 Gennady Denisov。</p>
+    <h3>Win32 版</h3>
+    <p>Color Linez for Win32 1.21，© 1998–1999 Ivan Golubev。他把這個遊戲當成送給弟弟的生日禮物。</p>
+  </div>
+  <div class="dfoot"><button class="btn" data-close autofocus>確定</button></div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  const N = 9, CELLS = 81, COLORS = 7;
+  const COLOR_NAMES = ['紅', '綠', '藍', '黃', '青', '紫', '褐'];
+  const STEP_MS = 34;
+  const KEY = { game: 'colorlinez.v1.game', prefs: 'colorlinez.v1.prefs', scores: 'colorlinez.v1.scores' };
+  const DEFAULT_KING = { name: 'Pretender', score: 100 };
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, reduceMotion ? Math.min(ms, 20) : ms));
+  const rnd = (n) => Math.floor(Math.random() * n);
+
+  /* ---------- storage ---------- */
+  function load(k, d) {
+    try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch (e) { return d; }
+  }
+  function store(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ }
+  }
+
+  let prefs = Object.assign({ showNext: true, sound: true, lastName: '' }, load(KEY.prefs, {}));
+  let scores = load(KEY.scores, []);
+  if (!Array.isArray(scores)) scores = [];
+  scores = scores.filter((s) => s && typeof s.name === 'string' && Number.isFinite(s.score)).slice(0, 10);
+
+  let S = null;          // game state
+  let sel = -1;          // selected cell
+  let busy = false;
+  let focusIdx = 40;
+
+  function freshStats() {
+    return { removed: Array(COLORS).fill(0), lines: 0, moves: 0, best: 0 };
+  }
+  function currentKing() {
+    return scores.length ? { name: scores[0].name, score: Math.max(1, scores[0].score) } : { ...DEFAULT_KING };
+  }
+  function validGame(g) {
+    return g && Array.isArray(g.board) && g.board.length === CELLS &&
+      g.board.every((v) => Number.isInteger(v) && v >= -1 && v < COLORS) &&
+      Array.isArray(g.next) && g.next.length === 3 &&
+      Number.isFinite(g.score) && g.king && Number.isFinite(g.king.score) && g.stats;
+  }
+  function save() { if (S) store(KEY.game, S); }
+
+  /* ---------- sound ---------- */
+  let AC = null;
+  function audio() {
+    if (!prefs.sound) return null;
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+    } catch (e) { return null; }
+    return AC;
+  }
+  function tone(freq, dur, type = 'square', vol = 0.04, when = 0) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + when;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  const sfx = {
+    pick() { tone(880, 0.05); },
+    land() { tone(330, 0.06, 'triangle', 0.06); },
+    nope() { tone(110, 0.2, 'sawtooth', 0.05); },
+    pop(n) { for (let k = 0; k < n; k++) tone(523 * Math.pow(2, (k * 2) / 12), 0.09, 'square', 0.035, k * 0.045); },
+    win() { [523, 659, 784, 1047].forEach((f, k) => tone(f, 0.16, 'square', 0.04, k * 0.12)); },
+    over() { [392, 330, 262, 196].forEach((f, k) => tone(f, 0.22, 'triangle', 0.06, k * 0.18)); },
+  };
+
+  /* ---------- LED ---------- */
+  const SEGS = {
+    a: [2, 0, 8, 2], b: [10, 1.5, 2, 8], c: [10, 10.5, 2, 8], d: [2, 18, 8, 2],
+    e: [0, 10.5, 2, 8], f: [0, 1.5, 2, 8], g: [2, 9, 8, 2],
+  };
+  const DIGIT = {
+    '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd',
+    '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '',
+  };
+  function ledSVG(text) {
+    let x = 0, out = '';
+    for (const ch of text) {
+      if (ch === ':') {
+        out += `<rect class="on" x="${x + 1}" y="5" width="2" height="2"/><rect class="on" x="${x + 1}" y="13" width="2" height="2"/>`;
+        x += 5; continue;
+      }
+      const lit = DIGIT[ch] || '';
+      for (const s in SEGS) {
+        const [sx, sy, w, h] = SEGS[s];
+        out += `<rect class="${lit.includes(s) ? 'on' : 'off'}" x="${x + sx}" y="${sy}" width="${w}" height="${h}" rx="1"/>`;
+      }
+      x += 15;
+    }
+    return `<svg viewBox="-1.5 -1 ${x + 1} 22" aria-hidden="true"><g transform="skewX(-6) translate(1 0)">${out}</g></svg>`;
+  }
+  function padNum(n, w = 5) { const s = String(Math.max(0, Math.floor(n))); return s.length >= w ? s : ' '.repeat(w - s.length) + s; }
+  function fmtTime(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  /* ---------- board DOM ---------- */
+  const boardEl = $('board');
+  const cellEls = [];
+  for (let i = 0; i < CELLS; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cell';
+    b.dataset.i = i;
+    b.tabIndex = i === focusIdx ? 0 : -1;
+    boardEl.appendChild(b);
+    cellEls.push(b);
+  }
+
+  function renderCell(i, anim) {
+    const c = S.board[i];
+    const el = cellEls[i];
+    const cls = c < 0 ? '' : `ball b${c}${i === sel ? ' sel' : ''}${anim ? ' ' + anim : ''}`;
+    el.innerHTML = c < 0 ? '' : `<span class="${cls}"></span>`;
+    const r = Math.floor(i / N) + 1, col = (i % N) + 1;
+    el.setAttribute('aria-label', `第 ${r} 列第 ${col} 欄，${c < 0 ? '空格' : COLOR_NAMES[c] + '球'}${i === sel ? '，已選取' : ''}`);
+  }
+  function renderBoard() { for (let i = 0; i < CELLS; i++) renderCell(i); }
+
+  function renderNext() {
+    const el = $('next');
+    el.innerHTML = S.next.map((c) =>
+      `<span class="slot">${prefs.showNext ? `<span class="ball b${c}"></span>` : '?'}</span>`).join('');
+    el.setAttribute('aria-label', prefs.showNext ? `下一組：${S.next.map((c) => COLOR_NAMES[c]).join('、')}` : '下一組（已隱藏）');
+  }
+
+  function renderScores() {
+    $('ledScore').innerHTML = ledSVG(padNum(S.score));
+    $('ledKing').innerHTML = ledSVG(padNum(S.king.score));
+    $('kingLabel').textContent = `王者 ${S.king.name}`;
+    $('ledScore').setAttribute('aria-label', `你的分數 ${S.score}`);
+    const p = Math.min(S.score / Math.max(1, S.king.score), 1);
+    $('pawn').style.setProperty('--p', p.toFixed(3));
+    const beaten = S.score > S.king.score;
+    $('king').classList.toggle('toppled', beaten);
+    $('pawn').classList.toggle('champion', beaten);
+  }
+  function renderTime() { $('ledTime').innerHTML = ledSVG(fmtTime(S.elapsed)); }
+  function msg(t) { $('msg').textContent = t; }
+
+  /* ---------- game logic ---------- */
+  function empties() { const e = []; for (let i = 0; i < CELLS; i++) if (S.board[i] < 0) e.push(i); return e; }
+  function randNext() { return [rnd(COLORS), rnd(COLORS), rnd(COLORS)]; }
+
+  function findPath(a, b) {
+    const prev = new Int16Array(CELLS).fill(-2);
+    prev[a] = -1;
+    const q = [a];
+    for (let h = 0; h < q.length; h++) {
+      const i = q[h];
+      if (i === b) break;
+      const r = Math.floor(i / N), c = i % N;
+      const nb = [];
+      if (r > 0) nb.push(i - N);
+      if (r < N - 1) nb.push(i + N);
+      if (c > 0) nb.push(i - 1);
+      if (c < N - 1) nb.push(i + 1);
+      for (const j of nb) {
+        if (prev[j] !== -2 || S.board[j] >= 0) continue;
+        prev[j] = i; q.push(j);
+      }
+    }
+    if (prev[b] === -2) return null;
+    const path = [];
+    for (let i = b; i !== -1; i = prev[i]) path.push(i);
+    return path.reverse();
+  }
+
+  const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  function findLines(starts) {
+    const cells = new Set();
+    let lines = 0;
+    const seen = new Set();
+    for (const i of starts) {
+      const color = S.board[i];
+      if (color < 0) continue;
+      const r0 = Math.floor(i / N), c0 = i % N;
+      for (const [dr, dc] of DIRS) {
+        const run = [i];
+        for (const s of [1, -1]) {
+          let r = r0 + dr * s, c = c0 + dc * s;
+          while (r >= 0 && r < N && c >= 0 && c < N && S.board[r * N + c] === color) {
+            run.push(r * N + c); r += dr * s; c += dc * s;
+          }
+        }
+        if (run.length >= 5) {
+          const key = dr + ',' + dc + ':' + Math.min(...run);
+          if (!seen.has(key)) { seen.add(key); lines++; }
+          run.forEach((j) => cells.add(j));
+        }
+      }
+    }
+    return { cells, lines };
+  }
+
+  function pointsFor(n) { return 10 + 2 * (n - 5) * (n - 5); }
+
+  async function clearBalls(hit) {
+    const list = [...hit.cells];
+    const n = list.length;
+    for (const i of list) {
+      S.stats.removed[S.board[i]]++;
+      const ball = cellEls[i].firstElementChild;
+      if (ball) { ball.classList.remove('sel'); ball.classList.add('pop'); }
+    }
+    sfx.pop(Math.min(n, 9));
+    await sleep(300);
+    for (const i of list) { S.board[i] = -1; renderCell(i); }
+    S.stats.lines += hit.lines;
+    const pts = pointsFor(n);
+    S.stats.best = Math.max(S.stats.best, pts);
+    const wasBelow = S.score <= S.king.score;
+    S.score += pts;
+    renderScores();
+    if (wasBelow && S.score > S.king.score) {
+      msg(`消掉 ${n} 顆，+${pts} 分。你贏過王者了！`);
+      setTimeout(() => sfx.win(), 250);
+    } else {
+      msg(`消掉 ${n} 顆，+${pts} 分。`);
+    }
+  }
+
+  async function spawn() {
+    const placed = [];
+    for (const c of S.next) {
+      const e = empties();
+      if (!e.length) break;
+      const i = e[rnd(e.length)];
+      S.board[i] = c;
+      renderCell(i, 'grow');
+      placed.push(i);
+      await sleep(110);
+    }
+    S.next = randNext();
+    renderNext();
+    await sleep(120);
+    const hit = findLines(placed);
+    if (hit.cells.size) await clearBalls(hit);
+  }
+
+  async function doMove(path) {
+    busy = true;
+    const from = path[0], color = S.board[from];
+    sel = -1;
+    S.started = true;
+    for (let k = 1; k < path.length; k++) {
+      S.board[path[k - 1]] = -1;
+      S.board[path[k]] = color;
+      renderCell(path[k - 1]);
+      renderCell(path[k]);
+      await sleep(STEP_MS);
+    }
+    sfx.land();
+    S.stats.moves++;
+    const to = path[path.length - 1];
+    const hit = findLines([to]);
+    if (hit.cells.size) {
+      await clearBalls(hit);
+    } else {
+      msg('　');
+      await spawn();
+    }
+    save();
+    if (empties().length === 0) { gameOver(); return; }
+    busy = false;
+  }
+
+  function select(i) {
+    const prev = sel;
+    sel = i;
+    if (prev >= 0) renderCell(prev);
+    renderCell(i);
+    sfx.pick();
+  }
+
+  function onCell(i) {
+    if (busy || S.over) return;
+    setFocus(i, false);
+    const c = S.board[i];
+    if (c >= 0) {
+      if (sel === i) { sel = -1; renderCell(i); }
+      else select(i);
+      return;
+    }
+    if (sel < 0) { msg('先點一顆球，再點要去的空格。'); return; }
+    const path = findPath(sel, i);
+    if (!path) {
+      const el = cellEls[i];
+      el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope');
+      sfx.nope();
+      msg('路被擋住了，走不過去。');
+      return;
+    }
+    doMove(path);
+  }
+
+  async function newGame() {
+    closeMenus();
+    busy = true;
+    sel = -1;
+    S = {
+      board: Array(CELLS).fill(-1), next: randNext(), score: 0, stats: freshStats(),
+      elapsed: 0, started: false, over: false, king: currentKing(),
+    };
+    $('over').hidden = true;
+    renderBoard(); renderNext(); renderScores(); renderTime();
+    msg('點一顆球，再點要去的空格。');
+    const e = empties();
+    for (let k = 0; k < 5; k++) {
+      const j = e.splice(rnd(e.length), 1)[0];
+      S.board[j] = rnd(COLORS);
+      renderCell(j, 'grow');
+      await sleep(70);
+    }
+    save();
+    busy = false;
+  }
+
+  function qualifies(score) {
+    return score > 0 && (scores.length < 10 || score > scores[scores.length - 1].score);
+  }
+
+  function gameOver() {
+    S.over = true;
+    busy = true;
+    save();
+    sfx.over();
+    $('overText').textContent = `得分 ${S.score}，用時 ${fmtTime(S.elapsed)}`;
+    $('over').hidden = false;
+    msg('棋盤滿了。按 F4 或「再玩一局」重新開始。');
+    if (qualifies(S.score)) {
+      setTimeout(() => {
+        $('nameLead').textContent = S.score > S.king.score
+          ? `你以 ${S.score} 分成為新的王者。`
+          : `你的 ${S.score} 分進了前十名。`;
+        $('nameInput').value = prefs.lastName || '';
+        $('nameErr').textContent = '';
+        $('dlgName').showModal();
+        $('nameInput').focus();
+        $('nameInput').select();
+      }, 700);
+    } else {
+      $('againBtn').focus();
+    }
+  }
+
+  $('nameForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const name = $('nameInput').value.trim();
+    if (!name) { $('nameErr').textContent = '名字不能空白，請輸入一個名字。'; return; }
+    prefs.lastName = name; store(KEY.prefs, prefs);
+    const entry = { name, score: S.score, at: Date.now() };
+    scores.push(entry);
+    scores.sort((a, b) => b.score - a.score || a.at - b.at);
+    scores = scores.slice(0, 10);
+    store(KEY.scores, scores);
+    $('dlgName').close();
+    showScores(entry.at);
+  });
+  $('dlgName').addEventListener('cancel', (ev) => ev.preventDefault());
+
+  /* ---------- dialogs ---------- */
+  function escapeHTML(s) { return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  function showScores(highlightAt) {
+    closeMenus();
+    let html = '<tr><th class="num">名次</th><th>名字</th><th class="num">分數</th></tr>';
+    for (let k = 0; k < 10; k++) {
+      const s = scores[k];
+      if (s) html += `<tr${s.at === highlightAt ? ' class="mine"' : ''}><td class="num">${k + 1}</td><td>${escapeHTML(s.name)}${k === 0 ? '（王者）' : ''}</td><td class="num">${s.score}</td></tr>`;
+      else html += `<tr><td class="num">${k + 1}</td><td style="color:var(--ink-soft)">－ 空 －</td><td></td></tr>`;
+    }
+    $('scoreTable').innerHTML = html;
+    $('dlgScores').showModal();
+  }
+
+  function showStats() {
+    closeMenus();
+    const st = S.stats;
+    const total = st.removed.reduce((a, b) => a + b, 0);
+    let html = '<tr><th>顏色</th><th class="num">消掉</th></tr>';
+    st.removed.forEach((n, c) => {
+      html += `<tr><td><span class="swatch"><span class="ball b${c}"></span></span>${COLOR_NAMES[c]}</td><td class="num">${n}</td></tr>`;
+    });
+    html += `<tr><td colspan="2"><hr style="border:0;border-top:1px solid var(--panel-lo);margin:4px 0"></td></tr>`;
+    html += `<tr><td>總共消掉</td><td class="num">${total} 顆</td></tr>`;
+    html += `<tr><td>連成的線</td><td class="num">${st.lines} 條</td></tr>`;
+    html += `<tr><td>移動次數</td><td class="num">${st.moves} 步</td></tr>`;
+    html += `<tr><td>單次最高</td><td class="num">${st.best} 分</td></tr>`;
+    html += `<tr><td>遊戲時間</td><td class="num">${fmtTime(S.elapsed)}</td></tr>`;
+    $('statsTable').innerHTML = html;
+    $('dlgStats').showModal();
+  }
+
+  function openDlg(id) { closeMenus(); $(id).showModal(); }
+
+  document.querySelectorAll('dialog').forEach((d) => {
+    d.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-close]')) d.close();
+    });
+  });
+
+  function toggleNext() {
+    prefs.showNext = !prefs.showNext;
+    store(KEY.prefs, prefs);
+    $('optNext').setAttribute('aria-checked', String(prefs.showNext));
+    renderNext();
+  }
+  function toggleSound() {
+    prefs.sound = !prefs.sound;
+    store(KEY.prefs, prefs);
+    $('optSound').setAttribute('aria-checked', String(prefs.sound));
+  }
+
+  /* ---------- menus ---------- */
+  const tops = [...document.querySelectorAll('.mtop')];
+  function closeMenus() {
+    tops.forEach((t) => { t.setAttribute('aria-expanded', 'false'); $(t.getAttribute('aria-controls')).hidden = true; });
+  }
+  function openMenu(t, focusFirst) {
+    closeMenus();
+    t.setAttribute('aria-expanded', 'true');
+    const d = $(t.getAttribute('aria-controls'));
+    d.hidden = false;
+    if (focusFirst) d.querySelector('button').focus();
+  }
+  tops.forEach((t, idx) => {
+    t.addEventListener('click', () => {
+      if (t.getAttribute('aria-expanded') === 'true') closeMenus(); else openMenu(t, false);
+    });
+    t.addEventListener('mouseenter', () => {
+      if (tops.some((o) => o.getAttribute('aria-expanded') === 'true') && t.getAttribute('aria-expanded') !== 'true') openMenu(t, false);
+    });
+    t.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowDown' || ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openMenu(t, true); }
+      if (ev.key === 'ArrowRight') { ev.preventDefault(); tops[(idx + 1) % tops.length].focus(); }
+      if (ev.key === 'ArrowLeft') { ev.preventDefault(); tops[(idx + tops.length - 1) % tops.length].focus(); }
+    });
+    const d = $(t.getAttribute('aria-controls'));
+    d.addEventListener('keydown', (ev) => {
+      const items = [...d.querySelectorAll('button')];
+      const k = items.indexOf(document.activeElement);
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); items[(k + 1) % items.length].focus(); }
+      if (ev.key === 'ArrowUp') { ev.preventDefault(); items[(k + items.length - 1) % items.length].focus(); }
+      if (ev.key === 'Escape') { ev.preventDefault(); closeMenus(); t.focus(); }
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+        ev.preventDefault();
+        const nt = tops[(idx + (ev.key === 'ArrowRight' ? 1 : tops.length - 1)) % tops.length];
+        openMenu(nt, true);
+      }
+    });
+  });
+  document.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.menubar')) closeMenus(); });
+
+  const ACTIONS = {
+    new: () => newGame(),
+    scores: () => showScores(),
+    next: () => toggleNext(),
+    sound: () => toggleSound(),
+    stats: () => showStats(),
+    rules: () => openDlg('dlgRules'),
+    about: () => openDlg('dlgAbout'),
+  };
+  document.querySelectorAll('.drop [data-act]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const act = b.dataset.act;
+      if (act === 'next' || act === 'sound') { ACTIONS[act](); return; }
+      closeMenus();
+      ACTIONS[act]();
+    });
+  });
+
+  /* ---------- input ---------- */
+  boardEl.addEventListener('click', (ev) => {
+    const c = ev.target.closest('.cell');
+    if (c) onCell(+c.dataset.i);
+  });
+
+  function setFocus(i, move = true) {
+    cellEls[focusIdx].tabIndex = -1;
+    focusIdx = i;
+    cellEls[i].tabIndex = 0;
+    if (move) cellEls[i].focus();
+  }
+  boardEl.addEventListener('keydown', (ev) => {
+    const r = Math.floor(focusIdx / N), c = focusIdx % N;
+    let t = -1;
+    if (ev.key === 'ArrowUp') t = ((r + N - 1) % N) * N + c;
+    if (ev.key === 'ArrowDown') t = ((r + 1) % N) * N + c;
+    if (ev.key === 'ArrowLeft') t = r * N + (c + N - 1) % N;
+    if (ev.key === 'ArrowRight') t = r * N + (c + 1) % N;
+    if (t >= 0) { ev.preventDefault(); setFocus(t); }
+  });
+
+  $('againBtn').addEventListener('click', () => newGame());
+
+  document.addEventListener('keydown', (ev) => {
+    const map = { F1: 'rules', F3: 'next', F4: 'new', F5: 'stats' };
+    const act = map[ev.key];
+    if (!act) return;
+    ev.preventDefault();
+    if (document.querySelector('dialog[open]')) return;
+    ACTIONS[act]();
+  });
+
+  /* ---------- timer ---------- */
+  setInterval(() => {
+    if (!S || S.over || !S.started || document.hidden) return;
+    S.elapsed++;
+    renderTime();
+    if (S.elapsed % 10 === 0) save();
+  }, 1000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  window.addEventListener('pagehide', save);
+
+  /* ---------- start ---------- */
+  $('optNext').setAttribute('aria-checked', String(prefs.showNext));
+  $('optSound').setAttribute('aria-checked', String(prefs.sound));
+
+  const saved = load(KEY.game, null);
+  if (validGame(saved) && !saved.over && saved.board.some((v) => v < 0)) {
+    S = saved;
+    S.stats = Object.assign(freshStats(), S.stats);
+    renderBoard(); renderNext(); renderScores(); renderTime();
+    msg('接著上次的局面繼續。按 F4 開新局。');
+  } else {
+    newGame();
+  }
+})();
+</script>
+</body>
+</html>
